@@ -1,16 +1,9 @@
-import fastify from 'fastify';
-import 'dotenv/config';
-
-const PORT = Number(process.env.PORT || 3133);
-
-const app = fastify({
-  logger: true
-});
-
-app.get('/', async (request, reply) => {
-  return { hello: 'world' }
-});
+import { app } from "./app";
 
 app
-  .listen({ port: PORT })
-  .then(() => console.log(`Server online in the port ${PORT}!`));
+  .listen({
+    port: 3133
+  })
+  .then(() => {
+    console.log("HTTP Server Running!");
+  });
