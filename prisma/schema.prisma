@@ -11,11 +11,12 @@ datasource db {
 }
 
 model Users {
-  id String @id @default(uuid())
-  email String @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  meals Meals[]
+  id        String    @id @default(uuid())
+  email     String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  meals     Meals[]
+  sessions  Session[] 
 
   @@map("users")
 }
@@ -28,6 +29,18 @@ model Meals {
   updatedAt DateTime @updatedAt
   author    Users    @relation(fields: [authorId], references: [id])
   authorId  String
+  isWithinDiet Boolean
 
    @@map("meals")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  session String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      Users     @relation(fields: [userId], references: [id])
+
+  @@map("sessions")
 }

@@ -1,7 +1,8 @@
 export interface User {
-    email: string;
-    createdAt: Date;
-    updatedAt: Date;
+  id: string;  
+  email: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export type UserCreate = Pick<User, 'email'>;
