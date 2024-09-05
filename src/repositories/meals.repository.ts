@@ -12,9 +12,30 @@ class MealRepositoryPrisma implements MealRepository{
                 createdAt: new Date()
             }
         });
-
+        
         return meal;
     }
+    
+    async findById(id: string): Promise<Meal | null> {
+        const meal = await prisma.meals.findUnique({
+            where: {
+                id
+            }
+        });
+
+        return meal || null;
+    };
+
+    async delete(id: string): Promise<boolean> {
+        const mealDeleted = await prisma.meals.delete({
+            where: {
+                id
+            }
+        });
+
+        return !!mealDeleted;
+    }
+    
 }
 
 const mealRepositoryPrisma = new MealRepositoryPrisma();

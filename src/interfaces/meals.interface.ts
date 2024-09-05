@@ -15,4 +15,6 @@ export interface CreateMealRequest {
 
 export interface MealRepository {
   create: (data: MealCreate) => Promise<Meal>;
+  findById: (id: string) => Promise<Meal | null>;
+  delete: (id: string) => Promise<boolean>;
 }

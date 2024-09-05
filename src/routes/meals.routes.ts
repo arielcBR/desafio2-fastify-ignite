@@ -6,4 +6,5 @@ export async function mealsRoutes(app: FastifyInstance) {
     app.addHook('preHandler', authUser);
 
     app.post('/', mealsController.create);
+    app.delete('/:id', mealsController.delete);
 }
