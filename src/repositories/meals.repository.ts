@@ -8,7 +8,8 @@ class MealRepositoryPrisma implements MealRepository{
                 name: data.name,
                 description: data.description,
                 authorId: data.authorId,
-                isWithinDiet: data.isWithinDiet
+                isWithinDiet: data.isWithinDiet,
+                createdAt: new Date()
             }
         });
 
