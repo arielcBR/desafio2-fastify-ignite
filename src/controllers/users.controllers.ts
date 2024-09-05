@@ -7,7 +7,7 @@ import {
   CreateUserRequest,
   UserRepository,
 } from "../interfaces/users.interface";
-import { SessionRepository } from "../interfaces/sessions.interface";
+import { Session, SessionRepository } from "../interfaces/sessions.interface";
 import { getExpireDate } from "../helpers/expireDateSession";
 
 class UserController {
@@ -67,14 +67,23 @@ class UserController {
       email: z.string().email(),
     });
 
-    const { email } = createSessionBodySchema.parse(request.body);
+    const emailValidation = createSessionBodySchema.safeParse(request.body);
+
+    if (!emailValidation.success) {
+      return reply.status(400).send({ message: `The email sent is invalid` });
+    }
 
     try {
-      const user = await this.userRepository.findByEmail(email);
-
+      const user = await this.userRepository.findByEmail(emailValidation.data.email);
+      
       if (user) {
-        const session = await this.newSession(reply, user.id);
-        return reply.status(200).send({ session });
+        const sessionExists = await this.sessionRepository.findLastSession(user.id);
+
+        if (!sessionExists) {
+          const newSession = await this.newSession(reply, user.id);
+          return reply.status(200).send({ newSession });
+        }
+        return reply.status(200).send({ session: sessionExists });
       }
 
       return reply.status(400).send({ message: "User cannot be found!" });
