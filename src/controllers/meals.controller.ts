@@ -63,6 +63,38 @@ class MealsController {
     }
   };
 
+  indexByUser = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { sessionId } = request.cookies;
+
+    try {
+      if (!sessionId) {
+        return reply
+          .status(401)
+          .send({ message: "Unauthorized, session not found" });
+      }
+    
+      const session = await this.sessionRepository.findUserBySession(sessionId);
+
+      if (!session) {
+        return reply
+          .status(401)
+          .send({ message: "Unauthorized, User not found" });
+      }
+
+      const AllMeals = await this.mealsRepository.getAllByUser(session.userId);
+
+      if (!AllMeals) {
+        return reply.status(404).send({ message: "The user does not registered a meal yet." })
+      }
+      
+      return reply.send(AllMeals);
+
+    } catch (error) {
+      console.log(error);
+      return reply.status(500).send({ message: 'Internal server error' });
+    }
+  }
+
   delete = async (request: FastifyRequest, reply: FastifyReply) => {
     const deleteMealParamsSchema  = z.object({
       id: z.string().uuid(),
@@ -77,7 +109,6 @@ class MealsController {
     }
 
     const mealID = paramsValidation.data.id;
-    console.log(mealID);
 
     try {
       const mealExists = await this.mealsRepository.findById(mealID);
