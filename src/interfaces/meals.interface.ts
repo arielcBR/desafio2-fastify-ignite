@@ -1,19 +1,21 @@
 export interface Meal {
-    name: string;
-    description: string;
-    createdAt: Date;
-    updatedAt: Date;
-    authorId: string;
-    isWithinDiet: boolean;
+  id?: string;
+  name: string;
+  description: string;
+  mealTime: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  authorId: string;
+  isWithinDiet: boolean;
 }
 
-export type MealCreate = Omit<Meal, 'createdAt' | 'updatedAt'>;
+export type MealCreate = Omit<Meal, "createdAt" | "updatedAt">;
 export interface CreateMealRequest {
-    Body: MealCreate;
+  Body: MealCreate;
 }
 export interface UpdateMeal {
   id: string;
-  Body: MealCreate
+  Body: MealCreate;
 }
 
 export interface MealRepository {

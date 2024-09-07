@@ -13,6 +13,7 @@ class MealRepositoryPrisma implements MealRepository {
         name: data.name,
         description: data.description,
         authorId: data.authorId,
+        mealTime: new Date(data.mealTime),
         isWithinDiet: data.isWithinDiet,
         createdAt: new Date(),
       },
@@ -29,8 +30,9 @@ class MealRepositoryPrisma implements MealRepository {
       data: {
         name: data.Body.name,
         description: data.Body.description,
+        mealTime: data.Body.mealTime, // Inclua o campo mealTime
         isWithinDiet: data.Body.isWithinDiet,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       },
     });
 

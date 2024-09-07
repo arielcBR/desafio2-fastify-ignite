@@ -33,7 +33,7 @@ class MealsController {
   }: {
     userId: string;
     meal: Meal;
-    }): boolean {
+  }): boolean {
     return userId === meal.authorId;
   }
 
@@ -43,6 +43,11 @@ class MealsController {
   ) => {
     const createMealSchema = z.object({
       name: z.string().min(2, { message: "Must be 2 or more characters long" }),
+      mealTime: z
+        .string()
+        .regex(
+          /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?([+-]\d{2}:\d{2}|Z)?$/
+        ),
       description: z.string({ message: "Invalid email address" }),
       isWithinDiet: z.boolean(),
     });
@@ -54,9 +59,8 @@ class MealsController {
     }
 
     try {
-      const { name, description, isWithinDiet } = createMealSchema.parse(
-        request.body
-      );
+      const { name, description, mealTime, isWithinDiet } =
+        createMealSchema.parse(request.body);
       const sessionDetails = await this.sessionRepository.findUserBySession(
         session
       );
@@ -71,6 +75,7 @@ class MealsController {
         authorId: sessionDetails.userId,
         name,
         description,
+        mealTime: new Date(mealTime),
         isWithinDiet,
       });
 
@@ -139,7 +144,6 @@ class MealsController {
     const mealIdParam = this.validateIdParam(request);
     const userId = request.cookies.userId;
 
-
     if (!mealIdParam) {
       return reply
         .status(400)
@@ -189,10 +193,10 @@ class MealsController {
 
     if (!mealId) {
       return reply
-      .status(401)
-      .send({ message: "The meal ID provided is invalid" });
+        .status(401)
+        .send({ message: "The meal ID provided is invalid" });
     }
-    
+
     if (!userId) {
       return reply
         .status(400)
@@ -204,6 +208,11 @@ class MealsController {
         .string()
         .min(2, { message: "Must be 2 or more characters long" })
         .optional(),
+      mealTime: z
+        .string()
+        .regex(
+          /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?([+-]\d{2}:\d{2}|Z)?$/
+        ),
       description: z.string({ message: "Invalid email address" }).optional(),
       isWithinDiet: z.boolean().optional(),
     });
@@ -215,7 +224,7 @@ class MealsController {
         .status(400)
         .send({ message: "The body provided is invalid" });
 
-    const { name, description, isWithinDiet } = data;
+    const { name, description, mealTime, isWithinDiet } = data;
 
     const meal = await this.mealsRepository.findById(mealId);
 
@@ -232,13 +241,16 @@ class MealsController {
     }
 
     meal.name = name ?? meal.name;
+    meal.mealTime = new Date(mealTime) ?? meal.mealTime;
     meal.description = description ?? meal.description;
     meal.isWithinDiet = isWithinDiet ?? meal.isWithinDiet;
 
     try {
-      const mealUpdated = await this.mealsRepository.update({ Body: meal, id: mealId });
+      const mealUpdated = await this.mealsRepository.update({
+        Body: meal,
+        id: mealId,
+      });
       return reply.status(200).send({ mealUpdated });
-      
     } catch (error) {
       console.log(error);
       return reply.status(500).send({ message: "Internal server error" });
