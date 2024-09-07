@@ -27,13 +27,7 @@ class MealsController {
       isWithinDiet: z.boolean(),
     });
 
-    const session = request.cookies.sessionId;
-
-    if (!session) {
-      return reply
-        .status(401)
-        .send({ message: "Unauthorized, session not found" });
-    }
+    const session = request.cookies.sessionId!;
 
     try {
       const { name, description, isWithinDiet } = createMealSchema.parse(
@@ -64,15 +58,9 @@ class MealsController {
   };
 
   indexByUser = async (request: FastifyRequest, reply: FastifyReply) => {
-    const { sessionId } = request.cookies;
+    const sessionId = request.cookies.sessionId!;
 
     try {
-      if (!sessionId) {
-        return reply
-          .status(401)
-          .send({ message: "Unauthorized, session not found" });
-      }
-    
       const session = await this.sessionRepository.findUserBySession(sessionId);
 
       if (!session) {
@@ -84,23 +72,53 @@ class MealsController {
       const AllMeals = await this.mealsRepository.getAllByUser(session.userId);
 
       if (!AllMeals) {
-        return reply.status(404).send({ message: "The user does not registered a meal yet." })
+        return reply
+          .status(404)
+          .send({ message: "The user does not registered a meal yet." });
       }
-      
-      return reply.send(AllMeals);
 
+      return reply.send(AllMeals);
     } catch (error) {
       console.log(error);
-      return reply.status(500).send({ message: 'Internal server error' });
+      return reply.status(500).send({ message: "Internal server error" });
     }
-  }
+  };
 
-  delete = async (request: FastifyRequest, reply: FastifyReply) => {
-    const deleteMealParamsSchema  = z.object({
+  get = async (request: FastifyRequest, reply: FastifyReply) => {
+    const getMealParamsSchema = z.object({
       id: z.string().uuid(),
     });
 
-    const paramsValidation = deleteMealParamsSchema .safeParse(request.params);
+    try {
+      const { success, data } = getMealParamsSchema.safeParse(request.params);
+
+      if (!success) {
+        return reply
+          .status(401)
+          .send({ message: "The meal ID provided is invalid" });
+      }
+
+      const meal = await this.mealsRepository.findById(data.id);
+
+      if (!meal) {
+        return reply
+          .status(404)
+          .send({ message: "The meal does not exist" });
+      }
+
+      return reply.send(meal);
+    } catch (error) {
+      console.log(error);
+      return reply.status(500).send({ message: "Internal server error" });
+    }
+  };
+
+  delete = async (request: FastifyRequest, reply: FastifyReply) => {
+    const deleteMealParamsSchema = z.object({
+      id: z.string().uuid(),
+    });
+
+    const paramsValidation = deleteMealParamsSchema.safeParse(request.params);
 
     if (!paramsValidation.success) {
       return reply
@@ -121,15 +139,12 @@ class MealsController {
 
       const deleteStatus = await this.mealsRepository.delete(mealID);
       if (!deleteStatus) {
-        return reply
-          .status(500)
-          .send({ message: "Error when deleting meal" });
+        return reply.status(500).send({ message: "Error when deleting meal" });
       }
 
-      return reply.status(200).send({ message: "The meal was deleted successfully" });
-
-
-
+      return reply
+        .status(200)
+        .send({ message: "The meal was deleted successfully" });
     } catch (error) {
       console.log(error);
       return reply.status(500).send({ message: "Internal server error" });

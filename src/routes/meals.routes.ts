@@ -7,5 +7,6 @@ export async function mealsRoutes(app: FastifyInstance) {
 
     app.post('/', mealsController.create);
     app.get('/', mealsController.indexByUser);
+    app.get("/:id", mealsController.get);
     app.delete('/:id', mealsController.delete);
 }

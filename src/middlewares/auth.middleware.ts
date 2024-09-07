@@ -5,7 +5,9 @@ export async function authUser(request: FastifyRequest, reply: FastifyReply) {
     const session = request.cookies?.sessionId;
     
     if(!session)
-        return reply.status(401).send({ message: 'Unauthorized, session must be initialized' });
+        return reply
+          .status(401)
+          .send({ message: "Unauthorized, session not found" });
     
     const sessionStatus = await isSessionValid(session);
 
