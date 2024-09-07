@@ -3,6 +3,7 @@ import {
   Meal,
   MealCreate,
   MealRepository,
+  UpdateMeal,
 } from "../interfaces/meals.interface";
 
 class MealRepositoryPrisma implements MealRepository {
@@ -14,6 +15,22 @@ class MealRepositoryPrisma implements MealRepository {
         authorId: data.authorId,
         isWithinDiet: data.isWithinDiet,
         createdAt: new Date(),
+      },
+    });
+
+    return meal;
+  }
+
+  async update(data: UpdateMeal): Promise<Meal> {
+    const meal = await prisma.meals.update({
+      where: {
+        id: data.id,
+      },
+      data: {
+        name: data.Body.name,
+        description: data.Body.description,
+        isWithinDiet: data.Body.isWithinDiet,
+        updatedAt: new Date()
       },
     });
 
@@ -40,14 +57,14 @@ class MealRepositoryPrisma implements MealRepository {
     return !!mealDeleted;
   }
 
-    async getAllByUser(id: string): Promise<Meal[] | null> {
-        const meals = await prisma.meals.findMany({
-            where: {
-                authorId: id
-            }
-        });
+  async getAllByUser(id: string): Promise<Meal[] | null> {
+    const meals = await prisma.meals.findMany({
+      where: {
+        authorId: id,
+      },
+    });
 
-        return meals || null;
+    return meals || null;
   }
 }
 

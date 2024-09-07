@@ -7,7 +7,7 @@ import {
   CreateUserRequest,
   UserRepository,
 } from "../interfaces/users.interface";
-import { Session, SessionRepository } from "../interfaces/sessions.interface";
+import { SessionRepository } from "../interfaces/sessions.interface";
 import { getExpireDate } from "../helpers/expireDateSession";
 
 class UserController {
@@ -29,6 +29,11 @@ class UserController {
     });
 
     reply.setCookie("sessionId", session, {
+      path: "/",
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+    });
+
+    reply.setCookie("userId", userId, {
       path: "/",
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
     });
@@ -74,16 +79,25 @@ class UserController {
     }
 
     try {
-      const user = await this.userRepository.findByEmail(emailValidation.data.email);
-      
+      const user = await this.userRepository.findByEmail(
+        emailValidation.data.email
+      );
+
       if (user) {
-        const sessionExists = await this.sessionRepository.findLastSession(user.id);
+        const sessionExists = await this.sessionRepository.findLastSession(
+          user.id
+        );
 
         if (!sessionExists) {
           const newSession = await this.newSession(reply, user.id);
           return reply.status(200).send({ newSession });
+        } else {
+          reply.setCookie("userId", user.id, {
+            path: "/",
+            maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+          });
+          return reply.status(200).send({ session: sessionExists });
         }
-        return reply.status(200).send({ session: sessionExists });
       }
 
       return reply.status(400).send({ message: "User cannot be found!" });
