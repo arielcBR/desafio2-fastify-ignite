@@ -1,5 +1,3 @@
-import { SessionCreate } from "./sessions.interface";
-
 export interface User {
   id: string;  
   email: string;
@@ -16,4 +14,5 @@ export interface CreateUserRequest {
 export interface UserRepository {
   create: (data: UserCreate) => Promise<User>;
   findByEmail(email: string): Promise<User | null>;
+  getMetrics(userId: string): void;
 }

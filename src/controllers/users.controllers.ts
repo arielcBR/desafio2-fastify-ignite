@@ -62,7 +62,7 @@ class UserController {
 
       return reply.status(409).send({ message: "User already registered!" });
     } catch (error) {
-      console.log(error);
+      console.error(error);
       return reply.status(500).send({ errorMessage: "Internal server error" });
     }
   };
@@ -102,8 +102,39 @@ class UserController {
 
       return reply.status(400).send({ message: "User cannot be found!" });
     } catch (error) {
-      console.log(error);
+      console.error(error);
       return reply.status(500).send({ errorMessage: "Internal server error" });
+    }
+  };
+
+  getMetrics = async (request: FastifyRequest, reply: FastifyReply) => {
+    const userIdParamsSchema = z.object({
+      id: z.string().uuid(),
+    });
+
+    const result = userIdParamsSchema.safeParse(request.params);
+
+    if (!result.success) {
+      return reply
+        .status(400)
+        .send({ message: "The user ID provided is invalid or not exist" });
+    }
+
+    const userId = request.cookies.userId;
+    const userIdParam = result.data.id;
+
+    if (userIdParam !== userId) {
+      return reply.status(401).send({
+        message: "Unauthorized, the metrics only can be accessed by its owner",
+      });
+    }
+
+    try {
+      const userMetrics = await this.userRepository.getMetrics(userId);
+      return reply.send({ userMetrics });
+    } catch (error) {
+      console.error(error);
+      return reply.status(500).send({ message: "Internal server error" });
     }
   };
 }
