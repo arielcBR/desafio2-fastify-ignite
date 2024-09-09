@@ -11,27 +11,18 @@ class UserRepositoryPrisma implements UserRepository {
     if (meals.length === 0) return 0;
 
     let maxSequence = 0;
-    let currentSequence = 1; // Começa com 1 porque a primeira refeição conta como uma sequência
+    let currentSequence = 0;
 
-    for (let i = 1; i < meals.length; i++) {
-      const previousMealTime = new Date(meals[i - 1].mealTime);
-      const currentMealTime = new Date(meals[i].mealTime);
-
-      // Verifica se a refeição atual é no dia seguinte da refeição anterior
-      if (
-        currentMealTime.getDate() === previousMealTime.getDate() + 1 &&
-        currentMealTime.getMonth() === previousMealTime.getMonth() &&
-        currentMealTime.getFullYear() === previousMealTime.getFullYear()
-      ) {
+    for (const meal of meals) {
+      console.log(meal);
+      if (meal.isWithinDiet) {
         currentSequence++;
       } else {
-        // Reinicia a sequência
         maxSequence = Math.max(maxSequence, currentSequence);
-        currentSequence = 1; // Reinicia a sequência para a próxima sequência
+        currentSequence = 0;
       }
     }
 
-    // Verifica a última sequência
     maxSequence = Math.max(maxSequence, currentSequence);
 
     return maxSequence;
@@ -85,7 +76,6 @@ class UserRepositoryPrisma implements UserRepository {
       where: {
         AND: {
           authorId: userId,
-          isWithinDiet: true,
         },
       },
       orderBy: {
