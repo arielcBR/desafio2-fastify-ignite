@@ -14,7 +14,6 @@ class UserRepositoryPrisma implements UserRepository {
     let currentSequence = 0;
 
     for (const meal of meals) {
-      console.log(meal);
       if (meal.isWithinDiet) {
         currentSequence++;
       } else {

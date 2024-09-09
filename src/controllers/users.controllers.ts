@@ -19,7 +19,7 @@ class UserController {
     this.sessionRepository = sessionRepositoryPrisma;
   }
 
-  private async newSession(reply: FastifyReply, userId: string) {
+  private async createSession(reply: FastifyReply, userId: string) {
     const sessionId = uuidv4();
 
     const { session } = await this.sessionRepository.create({
@@ -28,17 +28,23 @@ class UserController {
       session: sessionId,
     });
 
-    reply.setCookie("sessionId", session, {
-      path: "/",
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-    });
-
-    reply.setCookie("userId", userId, {
-      path: "/",
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-    });
+    this.setUserCookies(reply, session, userId);
 
     return session;
+  }
+
+  private setUserCookies(reply: FastifyReply, session: string, userId: string) {
+    const cookieOptions = {
+      path: "/",
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+    };
+
+    reply.setCookie("sessionId", session, cookieOptions);
+    reply.setCookie("userId", userId, cookieOptions);
+  }
+
+  private sendResponse(reply: FastifyReply, status: number, message: any) {
+    reply.status(status).send(message);
   }
 
   create = async (
@@ -56,18 +62,25 @@ class UserController {
 
       if (!user) {
         const userCreated = await this.userRepository.create({ email });
-        const session = await this.newSession(reply, userCreated.id);
-        return reply.status(200).send({ userCreated, session });
+        const session = await this.createSession(reply, userCreated.id);
+        return this.sendResponse(reply, 200, { userCreated, session });
       }
 
-      return reply.status(409).send({ message: "User already registered!" });
+      return this.sendResponse(reply, 409, {
+        message: "User already registered!",
+      });
     } catch (error) {
       console.error(error);
-      return reply.status(500).send({ errorMessage: "Internal server error" });
+      return this.sendResponse(reply, 500, {
+        errorMessage: "Internal server error",
+      });
     }
   };
 
-  createSession = async (request: FastifyRequest, reply: FastifyReply) => {
+  createSessionForUser = async (
+    request: FastifyRequest,
+    reply: FastifyReply
+  ) => {
     const createSessionBodySchema = z.object({
       email: z.string().email(),
     });
@@ -75,7 +88,9 @@ class UserController {
     const emailValidation = createSessionBodySchema.safeParse(request.body);
 
     if (!emailValidation.success) {
-      return reply.status(400).send({ message: `The email sent is invalid` });
+      return this.sendResponse(reply, 400, {
+        message: "The email sent is invalid",
+      });
     }
 
     try {
@@ -89,21 +104,22 @@ class UserController {
         );
 
         if (!sessionExists) {
-          const newSession = await this.newSession(reply, user.id);
-          return reply.status(200).send({ newSession });
+          const newSession = await this.createSession(reply, user.id);
+          return reply.status(200).send({ session: newSession });
         } else {
-          reply.setCookie("userId", user.id, {
-            path: "/",
-            maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-          });
-          return reply.status(200).send({ session: sessionExists });
+          this.setUserCookies(reply, sessionExists.session, user.id);
+          return this.sendResponse(reply, 200, { session: sessionExists });
         }
       }
 
-      return reply.status(400).send({ message: "User cannot be found!" });
+      return this.sendResponse(reply, 400, {
+        message: "User cannot be found!",
+      });
     } catch (error) {
       console.error(error);
-      return reply.status(500).send({ errorMessage: "Internal server error" });
+      return this.sendResponse(reply, 500, {
+        errorMessage: "Internal server error",
+      });
     }
   };
 
@@ -115,26 +131,28 @@ class UserController {
     const result = userIdParamsSchema.safeParse(request.params);
 
     if (!result.success) {
-      return reply
-        .status(400)
-        .send({ message: "The user ID provided is invalid or not exist" });
+      return this.sendResponse(reply, 400, {
+        message: "The user ID provided is invalid or does not exist",
+      });
     }
 
     const userId = request.cookies.userId;
     const userIdParam = result.data.id;
 
     if (userIdParam !== userId) {
-      return reply.status(401).send({
-        message: "Unauthorized, the metrics only can be accessed by its owner",
+      return this.sendResponse(reply, 401, {
+        message: "Unauthorized, metrics can only be accessed by its owner",
       });
     }
 
     try {
       const userMetrics = await this.userRepository.getMetrics(userId);
-      return reply.send({ userMetrics });
+      return this.sendResponse(reply, 200, { userMetrics });
     } catch (error) {
       console.error(error);
-      return reply.status(500).send({ message: "Internal server error" });
+      return this.sendResponse(reply, 500, {
+        message: "Internal server error",
+      });
     }
   };
 }
